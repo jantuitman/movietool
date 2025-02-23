@@ -1,10 +1,13 @@
 import os
 import injector
 from dsl_parser import Parser
+from paragraph_audio_renderer import ParagraphAudioRenderer
 from scene_renderer import SceneRenderer
-from paragraph_renderer import ParagraphRenderer
+from actor_renderer import ActorRenderer
+from overlay_renderer import OverlayRenderer
 from scene_cache import SceneCache
 from elevenlabs.client import ElevenLabs  # Assuming this module exists.
+from heygen_client import HeygenClient   # Our new Heygen client.
 
 class ServiceConfigurator:
     _instance = None
@@ -22,22 +25,21 @@ class ServiceConfigurator:
         if not api_key:
             raise ValueError("ELEVENLABS_API_KEY environment variable not set.")
         print("ELEVENLABS_API_KEY:", api_key)
-        # Bind the ElevenLabs client as a singleton.
         binder.bind(ElevenLabs, to=ElevenLabs(api_key=api_key), scope=injector.singleton)
+
+        # Retrieve the Heygen API key from an environment variable.
+        heygen_api_key = os.getenv('HEYGEN_API_KEY')
+        if not heygen_api_key:
+            raise ValueError("HEYGEN_API_KEY environment variable not set.")
+        print("HEYGEN_API_KEY:", heygen_api_key)
+        binder.bind(HeygenClient, to=HeygenClient(api_key=heygen_api_key), scope=injector.singleton)
 
         # Bind SceneCache as a singleton.
         binder.bind(SceneCache, to=SceneCache, scope=injector.singleton)
-
-        # Bind ParagraphAudioRenderer as a singleton.
-        # Its constructor requires a SceneCache and an ElevenLabs client, which will be resolved.
-        binder.bind(ParagraphRenderer, to=ParagraphRenderer, scope=injector.singleton)
-
-        # Bind SceneRenderer as a singleton.
-        # Since SceneRenderer requires a project directory, which is provided at runtime,
-        # ensure that the SceneRenderer instance later receives it via set_project_dir() or similar.
+        binder.bind(ParagraphAudioRenderer, to=ParagraphAudioRenderer, scope=injector.singleton)
+        binder.bind(ActorRenderer, to=ActorRenderer, scope=injector.singleton)
+        binder.bind(OverlayRenderer, to=OverlayRenderer, scope=injector.singleton)
         binder.bind(SceneRenderer, to=SceneRenderer, scope=injector.singleton)
-
-        # Bind the DSL Parser. It is assumed that Parser is stateless or light enough to be transient.
         binder.bind(Parser, to=Parser)
 
     def get_service(self, service_cls):

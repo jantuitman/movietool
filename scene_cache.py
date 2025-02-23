@@ -97,6 +97,25 @@ class SceneCache:
         all_paragraphs_cached = all(self.is_paragraph_audio_cached(scene, p) for p in scene.paragraphs)
         return os.path.exists(final_audio_path) and all_paragraphs_cached
 
+        # --- Paragraph Video Caching Methods ---
+    def get_paragraph_video_path(self, scene: Scene, paragraph: Paragraph) -> str:
+        """
+        Returns the full file path for the cached video of a given paragraph.
+        The file is named in the format: <actor>_<md5_of_paragraph>.mp4
+        and is stored in the scene's cache directory.
+        """
+        scene_cache_path = self.get_scene_cache_path(scene)
+        video_filename = f"{paragraph.actor}_{paragraph.get_md5()}.mp4"
+        return os.path.join(scene_cache_path, video_filename)
+
+    def is_paragraph_video_cached(self, scene: Scene, paragraph: Paragraph) -> bool:
+        """
+        Checks if the video file for the given paragraph is already cached.
+        """
+        video_path = self.get_paragraph_video_path(scene, paragraph)
+        return os.path.exists(video_path)
+
+
 
 # --- Example Usage ---
 if __name__ == "__main__":

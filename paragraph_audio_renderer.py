@@ -16,7 +16,7 @@ VOICE_MAPPING = {
     # Add more mappings as needed.
 }
 
-class ParagraphRenderer:
+class ParagraphAudioRenderer:
     @inject
     def __init__(self, cache: SceneCache, client: ElevenLabs):
         """
