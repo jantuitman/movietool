@@ -1,0 +1,8 @@
+services:
+  movietool:
+    build: .
+    volumes:
+      - ./:/opt/project
+    working_dir: /opt/project
+    env_file:
+      - .env

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Movietool Specification</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
+    pre { background-color: #f4f4f4; padding: 10px; border: 1px solid #ddd; }
+    code { background-color: #f4f4f4; padding: 2px 4px; }
+  </style>
+</head>
+<body>
+  <h1>Movietool Specification</h1>
+
+  <h2>Overview</h2>
+  <p>
+    <strong>Movietool</strong> is a command-line Python tool that uses an AI-based text-to-video pipeline. In its current phase, the tool reads a project’s script using a domain-specific language (DSL) parser and prints out the parsed objects. The project is structured to support multiple video projects, with a default project (<code>test_project</code>) used during development.
+  </p>
+
+   <h2>Project Structure</h2>
+  <pre>
+movietool/
+├── main.py
+├── docker-compose.yml
+├── Dockerfile
+├── specs.html (this document)
+├── dsl_parser.py
+├── paragraph_audio_renderer.py
+├── scene_cache.py
+├── scene_renderer.py
+└── projects/
+    └── test_project/
+         ├── script.txt
+         └── cache/         <!-- Cache folders for rendered scenes are created here -->
+  </pre>
+  <ul>
+    <li>
+      <strong>main.py:</strong> The entry point of the tool. It accepts an optional command-line argument specifying the project name (defaults to <code>test_project</code>). It constructs the file path for the project's script, invokes the DSL parser, and prints each parsed object.
+    </li>
+    <li>
+      <strong>dsl_parser.py:</strong> Contains the <code>Parser</code> class with a <code>parse(filename)</code> method. The parser reads the project's DSL script and converts it into a structured representation of scenes and paragraphs.
+    </li>
+    <li>
+      <strong>scene_cache.py:</strong> Implements the caching mechanism. It creates a unique cache folder for each scene based on an MD5 hash of the scene's content. Rendered scenes are stored in their respective cache folders, and a scene is considered fully rendered when its cache folder contains a file named <code>scene.mp4</code>.
+    </li>
+    <li>
+      <strong>projects Directory:</strong> Contains individual project folders. Each project folder (e.g., <code>test_project</code>) includes a <code>script.txt</code> file and a <code>cache</code> directory where rendered scene outputs are stored.
+    </li>
+  </ul>
+
+  <h2>Detailed Component Specifications</h2>
+
+  <h3>1. Command-Line Interface (CLI)</h3>
+  <p><strong>Invocation:</strong></p>
+  <pre>
+python main.py [project_name]
+  </pre>
+  <p><strong>Arguments:</strong></p>
+  <ul>
+    <li>
+      <strong>project_name (optional):</strong> Name of the video project. If not provided, defaults to <code>test_project</code>.
+    </li>
+  </ul>
+
+  <h3>2. File Paths and Directory Structure</h3>
+  <ul>
+    <li>
+      The tool expects the following structure within the repository:
+      <ul>
+        <li>The <code>projects</code> directory is a subdirectory of the tool’s base directory.</li>
+        <li>Each project folder (e.g., <code>test_project</code>) contains a <code>script.txt</code> file.</li>
+      </ul>
+    </li>
+    <li>
+      <strong>Path Construction:</strong>
+      <ul>
+        <li>Paths are computed relative to the script’s location using the <code>__file__</code> attribute.</li>
+        <li>In the Dockerized environment (and corresponding IDE settings), the working directory and path mappings have been standardized to <code>/opt/project</code> to ensure consistency.</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>3. DSL Parser</h3>
+  <ul>
+    <li>
+      <strong>Parser Class:</strong> Defined in <code>dsl_parser.py</code>.
+    </li>
+    <li>
+      <strong>Method:</strong>
+      <ul>
+        <li>
+          <code>parse(filename)</code>: Reads the DSL script specified by <code>filename</code> and returns a structured list of scene objects.
+        </li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>DSL Format and Parsing Rules:</h4>
+  <ul>
+    <li>
+      <strong>Scenes:</strong>
+      <ul>
+        <li>A movie project is divided into multiple scenes.</li>
+        <li>Each scene starts with an <strong>overlay</strong>, which is an XML fragment.</li>
+        <li>The overlay is parsed using an XML parser (e.g., <code>xml.etree.ElementTree</code>), <strong>not</strong> regular expressions.</li>
+      </ul>
+    </li>
+    <li>
+      <strong>Paragraphs:</strong>
+      <ul>
+        <li>Following the overlay, one or more paragraphs may be defined.</li>
+        <li>Paragraphs are separated by blank lines (i.e., two or more consecutive newline characters). A single newline within a paragraph does not create a new paragraph.</li>
+        <li>A paragraph may optionally begin with an inline actor declaration (a self-closing XML tag <code>&lt;actor name="..."/&gt;</code>).</li>
+        <li>If an actor declaration is present at the start of a paragraph, it sets the current actor for that paragraph and any subsequent paragraphs until a new actor declaration is encountered.</li>
+        <li>If no actor is specified, the paragraph inherits the actor from the previous paragraph or defaults to <code>narrator</code>.</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h4>Example DSL File:</h4>
+  <pre>
+&lt;!-- This is an example DSL file --&gt;
+
+&lt;chapter title="Chapter 1" start="0" duration="3"/&gt;
+
+This is another paragraph without an explicit actor tag,
+so it will use the default actor (narrator).
+
+&lt;bulletlist start="5" bullet_delay="2"&gt;
+    &lt;item&gt;First point&lt;/item&gt;
+    &lt;item&gt;Second point&lt;/item&gt;
+    &lt;item&gt;Third point&lt;/item&gt;
+&lt;/bulletlist&gt;
+
+&lt;actor name="actor1"/&gt;
+This is the first paragraph spoken by actor1.
+
+This is another paragraph without an explicit actor tag,
+Because actor1 is the current actor specified at the previous paragraph, actor1 will also be the actor of this paragraph.
+  </pre>
+
+  <h3>4. Docker and Development Environment</h3>
+  <ul>
+    <li>
+      <strong>Docker Compose Setup:</strong>
+      <ul>
+        <li>A service named <code>movietool</code> is defined in the <code>docker-compose.yml</code>.</li>
+        <li>The local project directory is mounted to <code>/opt/project</code> in the container.</li>
+        <li>The working directory in the container is set to <code>/opt/project</code>.</li>
+      </ul>
+    </li>
+    <li>
+      <strong>PyCharm Remote Debugging:</strong>
+      <ul>
+        <li>The PyCharm run configuration uses Docker Compose to run the tool.</li>
+        <li>Path mappings in PyCharm are adjusted so that the local project directory maps to <code>/opt/project</code>.</li>
+        <li>This setup ensures that breakpoints in the IDE align with the remote file locations.</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h3>5. Cache System</h3>
+  <p>
+    To avoid re-rendering scenes that have already been processed, Movietool uses a caching mechanism. Each scene is uniquely identified by its content—comprising its overlay and paragraphs—and an MD5 hash is computed based on this content.
+  </p>
+  <ul>
+    <li>
+      <strong>Cache Directory:</strong> For each scene, a cache folder is created at <code>&lt;project_dir&gt;/cache/scene_<em>md5_hash</em></code>. For example, if the project directory is <code>./projects/test_project</code>, a scene's cache folder might be located at <code>./projects/test_project/cache/scene_e2ab6cf383dedb838ca51e932fb05665</code>.
+    </li>
+    <li>
+      <strong>Rendered File:</strong> A scene is considered fully rendered if the cache folder contains a file named <code>scene.mp4</code>.
+    </li>
+    <li>
+      <strong>Integration:</strong> The cache system is integrated into the rendering pipeline. Before processing a scene, the system checks whether the scene's cache folder already contains the rendered file to decide if rendering should be skipped.
+    </li>
+  </ul>
+</body>
+</html>
