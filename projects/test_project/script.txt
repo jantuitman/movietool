@@ -1,0 +1,19 @@
+<!-- This is an example DSL file -->
+
+<chapter title="Chapter 1" start="0" duration="3"/>
+
+This is another paragraph without an explicit actor tag,
+so it will use the default actor (narrator).
+
+
+<bulletlist start="5" bullet_delay="2">
+    <item>First point</item>
+    <item>Second point</item>
+    <item>Third point</item>
+</bulletlist>
+
+<actor name="actor1"/>
+This is the first paragraph spoken by actor1.
+
+This is another paragraph without an explicit actor tag,
+Because actor1 is the current actor specified at the previous paragraph, actor1 will also be the actor of this paragraph.
