@@ -1,0 +1,12 @@
+.env
+# Ignore everything in projects/
+projects/*
+
+# But don't ignore the test_project directory
+!projects/test_project/
+
+# In test_project, ignore everything...
+projects/test_project/*
+
+# ...except script.txt
+!projects/test_project/script.txt
