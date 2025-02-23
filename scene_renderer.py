@@ -1,7 +1,7 @@
 import os
 from injector import inject
 from dsl_parser import Scene  # Import Scene model from dsl_parser.py
-from paragraph_audio_renderer import ParagraphAudioRenderer
+from paragraph_renderer import ParagraphRenderer
 from scene_cache import SceneCache
 from moviepy.video.VideoClip import TextClip, ColorClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
@@ -54,7 +54,7 @@ def moviepy_render_scene_with_audio(scene: Scene, output_path: str, audio_file: 
 
 class SceneRenderer:
     @inject
-    def __init__(self, paragraph_audio_renderer: ParagraphAudioRenderer, scene_cache: SceneCache):
+    def __init__(self, paragraph_audio_renderer: ParagraphRenderer, scene_cache: SceneCache):
         """
         Initializes the SceneRenderer with injected dependencies:
           - audio_renderer: instance of ParagraphAudioRenderer
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     dummy_client = ElevenLabs(api_key="DUMMY_API_KEY")
     from scene_cache import SceneCache
     dummy_cache = SceneCache()  # Now assuming SceneCache has a set_project_dir method.
-    audio_renderer = ParagraphAudioRenderer(dummy_cache, dummy_client)
+    audio_renderer = ParagraphRenderer(dummy_cache, dummy_client)
 
     renderer = SceneRenderer(audio_renderer, dummy_cache)
     renderer.set_project_dir(project_dir)

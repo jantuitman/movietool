@@ -2,7 +2,7 @@ import os
 import injector
 from dsl_parser import Parser
 from scene_renderer import SceneRenderer
-from paragraph_audio_renderer import ParagraphAudioRenderer
+from paragraph_renderer import ParagraphRenderer
 from scene_cache import SceneCache
 from elevenlabs.client import ElevenLabs  # Assuming this module exists.
 
@@ -30,7 +30,7 @@ class ServiceConfigurator:
 
         # Bind ParagraphAudioRenderer as a singleton.
         # Its constructor requires a SceneCache and an ElevenLabs client, which will be resolved.
-        binder.bind(ParagraphAudioRenderer, to=ParagraphAudioRenderer, scope=injector.singleton)
+        binder.bind(ParagraphRenderer, to=ParagraphRenderer, scope=injector.singleton)
 
         # Bind SceneRenderer as a singleton.
         # Since SceneRenderer requires a project directory, which is provided at runtime,

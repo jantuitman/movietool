@@ -16,7 +16,7 @@ VOICE_MAPPING = {
     # Add more mappings as needed.
 }
 
-class ParagraphAudioRenderer:
+class ParagraphRenderer:
     @inject
     def __init__(self, cache: SceneCache, client: ElevenLabs):
         """
@@ -130,46 +130,3 @@ class ParagraphAudioRenderer:
         print(f"Final scene audio rendered and cached at: {final_audio_path}")
         return final_audio_path
 
-# --- Example Usage ---
-if __name__ == "__main__":
-    # Dummy definitions for testing purposes.
-    class DummyParagraph:
-        def __init__(self, text, actor):
-            self.text = text
-            self.actor = actor
-
-        def get_md5(self):
-            return hashlib.md5(self.text.encode("utf-8")).hexdigest()
-
-    class DummyScene:
-        def __init__(self, overlay):
-            self.overlay = overlay
-            self.paragraphs = []
-
-        def get_md5(self):
-            # For simplicity, just use the MD5 of the overlay's string representation.
-            return hashlib.md5(str(self.overlay).encode("utf-8")).hexdigest()
-
-    import xml.etree.ElementTree as ET
-
-    # Set up the project directory and configure the cache.
-    project_dir = os.path.abspath('./projects/test_project')
-    cache = SceneCache()
-    cache.set_project_dir(project_dir)
-
-    # Create a dummy scene and paragraphs.
-    overlay_xml = ET.fromstring('<chapter title="Chapter 1" start="0" duration="3"/>')
-    scene = DummyScene(overlay_xml)
-    paragraph1 = DummyParagraph("This is a test paragraph. It will be rendered by ElevenLabs.", "narrator")
-    paragraph2 = DummyParagraph("This is another test paragraph for actor1.", "actor1")
-    scene.paragraphs.extend([paragraph1, paragraph2])
-
-    # Initialize the ElevenLabs client (ensure your API key is set in your environment or here).
-    client = ElevenLabs(api_key="YOUR_API_KEY")
-
-    # Create an instance of ParagraphAudioRenderer.
-    audio_renderer = ParagraphAudioRenderer(cache, client)
-
-    # Render (or fetch) the complete scene audio.
-    audio_file = audio_renderer.render_scene(scene)
-    print("Rendered audio file:", audio_file)
